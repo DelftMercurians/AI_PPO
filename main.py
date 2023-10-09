@@ -9,9 +9,10 @@ from jax import tree_util as jtu
 import matplotlib.pyplot as plt
 from IPython.display import clear_output
 from brax import envs
-from src.wrappers import ActionTanhConstraintWrapper, ObservationNormalizingWrapper, Agent
-from src.dataclasses import HyperParameters
-from src.ppo import train
+from ppo_brax_equinox.wrappers import ActionTanhConstraintWrapper, ObservationNormalizingWrapper, Agent
+from ppo_brax_equinox.dataclasses import HyperParameters
+from ppo_brax_equinox.ppo import train
+
 
 xdata, ydata = [], []
 
@@ -19,6 +20,7 @@ xdata, ydata = [], []
 def progress(step_num, metrics):
     xdata.append(step_num)
     ydata.append(metrics["eval/episode_reward"])
+    print("episode reward: ", metrics["eval/episode_reward"])
     clear_output(wait=True)
 
     plt.xlim([0, 40_000_000])

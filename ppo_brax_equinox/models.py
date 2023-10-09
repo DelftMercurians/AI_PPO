@@ -6,6 +6,8 @@ from jax import random as jr
 from jax import numpy as jnp
 from jax import tree_util as jtu
 
+from jaxtyping import Array, Float, Int32, PRNGKeyArray
+
 import equinox as eqx
 
 from .dataclasses import Action, LogNormalDistribution
@@ -16,7 +18,7 @@ class Critic(eqx.Module):
 
     structure: list
 
-    def __init__(self, key: jr.PRNGKey, observation_size: int):
+    def __init__(self, key: PRNGKeyArray, observation_size: int):
         output_size = 1  # output is the value, TD residual, always a single output
 
         key1, key2, key3, key4 = jr.split(key, 4)
@@ -41,7 +43,7 @@ class MeanNetwork(eqx.Module):
 
     structure: list
 
-    def __init__(self, key: jr.PRNGKey, observation_size: int, action_size: int):
+    def __init__(self, key: PRNGKeyArray, observation_size: int, action_size: int):
         key1, key2, key3, key4 = jax.random.split(key, 4)
         self.structure = [
             eqx.nn.Linear(observation_size, 64, key=key1),
@@ -74,7 +76,7 @@ class Actor(eqx.Module):
 
     def __init__(
         self,
-        key: jr.PRNGKey,
+        key: PRNGKeyArray,
         observation_size: int,
         action_size: int,
         initial_std: float,
@@ -96,7 +98,7 @@ class ActorCritic(eqx.Module):
 
     def __init__(
         self,
-        key: jr.PRNGKey,
+        key: PRNGKeyArray,
         observation_size: int,
         action_size: int,
         initial_actor_std: float = 0.5,
@@ -111,7 +113,7 @@ class ActorCritic(eqx.Module):
     def get_value(self, observation):
         return self.critic(observation)
 
-    def get_action(self, key: jr.PRNGKey, observation):
+    def get_action(self, key: PRNGKeyArray, observation):
         distr = self.actor(observation)
         action = distr.sample(key)
         return Action(raw=action, transformed=action, distr=distr)

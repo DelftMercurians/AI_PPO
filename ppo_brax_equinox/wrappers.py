@@ -4,8 +4,7 @@ from jax import random as jr
 from jax import numpy as jnp
 from jax import tree_util as jtu
 
-from jaxtyping import Array, Float, Int32, PRNGKeyArray, jaxtyped
-from beartype import beartype as typechecker
+from jaxtyping import Array, Float, Int32, PRNGKeyArray
 from beartype.typing import Tuple
 
 import equinox as eqx
@@ -68,14 +67,10 @@ class Agent(BaseWrapper):
         # immutable -> don't change the self.next
         return self
 
-    @jaxtyped
-    @typechecker
     def get_action(self, key: PRNGKeyArray, observation: Float[Array, "*batch obs_size"]) -> Tuple[
             Action, "Agent"]:
         return self.next.get_action(key, observation), self
 
-    @jaxtyped
-    @typechecker
     def get_value(self, observation: Float[Array, "*batch obs_size"]) -> Tuple[
             Float[Array, "*batch size"], "Agent"]:
         return self.next.get_value(observation), self
@@ -100,8 +95,6 @@ class _RunningStats(eqx.Module):
 
     # we are initializing n with two so that we don't get division by zero, ever
     # this biases the running statistics, but not really that much
-    @jaxtyped
-    @typechecker
     def __init__(self, size: int, mean: Float[Array, "*batch size"] = None, M2: Float[Array, "*batch size"] = None,
                  n=jnp.int32(2)):
         self.size = size
@@ -109,8 +102,6 @@ class _RunningStats(eqx.Module):
         self.M2 = (jnp.zeros(size) + 1e-6) if M2 is None else M2
         self.n = n
 
-    @jaxtyped
-    @typechecker
     def process(self, obs: Float[Array, "*batch size"]) -> Tuple[Float[Array, "*batch size"], "_RunningStats"]:
         std = jnp.sqrt(self.M2 / self.n)
         std = eqx.error_if(
@@ -132,8 +123,6 @@ class _RunningStats(eqx.Module):
     def update_single(self, obs) -> "_RunningStats":
         return self.update(obs[None, :])
 
-    @jaxtyped
-    @typechecker
     def update(self, obs: Float[Array, "*batch size"]) -> "_RunningStats":
         obs = eqx.error_if(
             obs,
@@ -163,16 +152,12 @@ class ObservationNormalizingWrapper(BaseWrapper):
             _RunningStats(self.next.get_obs_size()) if params is None else params
         )
 
-    @jaxtyped
-    @typechecker
     def get_value(self, observation: Float[Array, "*batch obs_size"]) -> Tuple[
             Float[Array, "*batch size"], "ObservationNormalizingWrapper"]:
         observation, updated_params = self.params.process(observation)
         out, new_next = self.next.get_value(observation)
         return out, ObservationNormalizingWrapper(new_next, updated_params)
 
-    @jaxtyped
-    @typechecker
     def get_action(self, key: PRNGKeyArray, observation: Float[Array, "*batch obs_size"]) -> Tuple[
             Action, "ObservationNormalizingWrapper"]:
         observation, updated_params = self.params.process(observation)
@@ -195,8 +180,6 @@ class ActionTanhConstraintWrapper(BaseWrapper):
         self.next = next
         self.params: ValueRange = ValueRange(range_low, range_high)
 
-    @jaxtyped
-    @typechecker
     def get_action(self, key: PRNGKeyArray, observation: Float[Array, "*batch obs_size"]) -> Tuple[
             Action, "ActionTanhConstraintWrapper"]:
         action, new_next = self.next.get_action(key, observation)
@@ -218,8 +201,6 @@ class ActionExactConstraintWrapper(BaseWrapper):
         self.range_low = range_low
         self.range_high = range_high
 
-    @jaxtyped
-    @typechecker
     def get_action(self, key: PRNGKeyArray, observation: Float[Array, "*batch obs_size"]) -> Tuple[
             Action, "ActionExactConstraintWrapper"]:
         action, new_next = self.next.get_action(key, observation)

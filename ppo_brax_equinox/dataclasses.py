@@ -4,6 +4,8 @@ import jax
 from jax import random as jr
 from jax import numpy as jnp
 
+from jaxtyping import Array, Float, Int32, PRNGKeyArray
+
 import optax
 
 import equinox as eqx
@@ -36,7 +38,7 @@ class LogNormalDistribution(eqx.Module):
         normalized = (value - self.mean) / jnp.exp(self.log_std)
         return jax.scipy.stats.norm.logpdf(normalized).sum()
 
-    def sample(self, key: jr.PRNGKey):
+    def sample(self, key: PRNGKeyArray):
         return jr.normal(key, self.mean.shape) * jnp.exp(self.log_std) + self.mean
 
     def entropy(self):
