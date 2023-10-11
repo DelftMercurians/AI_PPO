@@ -1,5 +1,4 @@
 import time
-from typing import Callable
 
 import jax
 from jax import random as jr

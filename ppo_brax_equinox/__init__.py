@@ -6,5 +6,7 @@ with install_import_hook("ppo_brax_equinox", "beartype.beartype"):
     # Any module imported inside this `with` block, whose name begins with the specified string,
     # will automatically have both `@jaxtyped` and the specified
     # typechecker applied to all of their functions.
-    print("Installing import hook for jaxtyping and beartype")
-    from .wrappers import ObservationNormalizingWrapper
+    # print("Installing import hook for jaxtyping and beartype")
+    from .wrappers import *
+    # type checking still happens in this file even though it is not directly imported
+    # from .dataclasses import LogNormalDistribution

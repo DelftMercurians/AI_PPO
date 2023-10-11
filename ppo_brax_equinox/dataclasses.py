@@ -1,4 +1,4 @@
-from typing import Callable
+from beartype.typing import Callable, Union, Any
 
 import jax
 from jax import random as jr
@@ -13,17 +13,18 @@ import equinox as eqx
 from brax import envs
 
 from typing import TYPE_CHECKING
+
 if TYPE_CHECKING:
-    from .wrappers import Agent
+    from .wrappers import BaseWrapper, ActionTanhConstraintWrapper
 
 
 class LogNormalDistribution(eqx.Module):
     """Multivariate Log Normal distribution with diagonal covariance"""
 
-    mean: jax.Array
-    log_std: jax.Array
+    mean: Float[Array, "*batch mean_dim"]
+    log_std: Float[Array, "*batch mean_dim"]
 
-    def get_pdf(self, value):
+    def get_pdf(self, value: Float[Array, "*batch mean_dim"]) -> Float[Array, "*batch"]:
         value = eqx.error_if(
             value,
             value.shape != self.mean.shape,
@@ -55,8 +56,8 @@ class Action(eqx.Module):
     distr: distribution from which raw action was sampled
     """
 
-    raw: jax.Array = None
-    transformed: jax.Array = None
+    raw: Float[Array, "action_size"] = None
+    transformed: Float[Array, "action_size"] = None
     distr: LogNormalDistribution = None
 
     def postprocess(self, apply: Callable):
@@ -66,8 +67,8 @@ class Action(eqx.Module):
 
 
 class ValueRange(eqx.Module):
-    low: jax.Array
-    high: jax.Array
+    low: float
+    high: float
 
 
 class HyperParameters(eqx.Module):
@@ -102,10 +103,10 @@ class HyperParameters(eqx.Module):
 class Transition(eqx.Module):
     """Represents a transition between two adjacent environment states."""
 
-    observation: jax.Array  # observation on the current state
+    observation: Float[Array, "*batch obs_size"]  # observation on the current state
     action: Action  # action that was taken on the current state
-    reward: float  # reward, that was given as the result of the action
-    next_observation: jax.Array  # next observation
+    reward: Float[Array, "*batch"]  # reward, that was given as the result of the action
+    next_observation: Float[Array, "*batch obs_size"]  # next observation
     extras: dict  # any simulator-extracted hints, like end of episode signal
 
 
@@ -125,10 +126,14 @@ class Environment(eqx.Module):
 
     env: envs.base.Env = eqx.field(static=True)
     state: envs.base.State
-    steps_done: jax.Array = eqx.field(default=0, converter=jnp.asarray)
+    # todo: fix with the new version of jaxtyping
+    steps_done: Union[int, Int32[Array, ""]] = eqx.field(default=0, converter=jnp.asarray)
 
 
 class TrainingState(eqx.Module):
     optimizer: Optimizer
-    agent: "Agent"
+    # todo: i get beartype.roar.BeartypeCallHintForwardRefException:
+    #  Forward reference "ppo_brax_equinox.dataclasses.ActionTanhConstraintWrapper" unimportable.
+    #  if i specify the class
+    agent: Any  # "BaseWrapper", or specifically "ActionTanhConstraintWrapper"
     env: Environment

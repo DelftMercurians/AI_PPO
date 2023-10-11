@@ -1,5 +1,3 @@
-from typing import Callable
-
 import jax
 from jax import lax
 from jax import random as jr
