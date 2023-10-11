@@ -8,5 +8,11 @@ with install_import_hook("ppo_brax_equinox", "beartype.beartype"):
     # typechecker applied to all of their functions.
     # print("Installing import hook for jaxtyping and beartype")
     from .wrappers import *
-    # type checking still happens in this file even though it is not directly imported
-    # from .dataclasses import LogNormalDistribution
+    # type checking still happens in the dataclasses file even if it is not directly imported.
+    # and it is not because of the wildcard import before it
+    from .dataclasses import *
+
+    from .ppo import *
+    from .models import *
+    from .utils import *
+    from .evaluator import *

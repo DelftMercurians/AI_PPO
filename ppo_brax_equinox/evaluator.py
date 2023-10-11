@@ -4,6 +4,8 @@ import jax
 from jax import random as jr
 from jax import numpy as jnp
 
+from jaxtyping import Array, Float, Int32, PRNGKeyArray
+
 import equinox as eqx
 
 from brax import envs
@@ -27,7 +29,7 @@ class Evaluator:
         self._steps_per_unroll = episode_length * num_eval_envs
 
     @eqx.filter_jit
-    def evaluate(self, key: jr.PRNGKey, agent):
+    def evaluate(self, key: PRNGKeyArray, agent):
         reset_keys = jr.split(key, self.num_eval_envs)
         eval_first_state = self.eval_env.reset(reset_keys)
         return generate_unroll(
@@ -40,7 +42,7 @@ class Evaluator:
         )[0]
 
     def run_evaluation(
-        self, key: jr.PRNGKey, agent, training_metrics, aggregate_episodes: bool = True
+        self, key: PRNGKeyArray, agent, training_metrics, aggregate_episodes: bool = True
     ):
         t = time.time()
         eval_state = self.evaluate(key, agent)

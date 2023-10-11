@@ -70,7 +70,7 @@ class Actor(eqx.Module):
     """A module, that outputs action distribution for a particular state."""
 
     mean_network: MeanNetwork
-    log_std: jax.Array  # Trainable array
+    log_std: Float[Array, "*batch action_size"]  # Trainable array
 
     def __init__(
         self,

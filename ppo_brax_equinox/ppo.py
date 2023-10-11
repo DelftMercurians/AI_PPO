@@ -4,21 +4,27 @@ from jax import random as jr
 from jax import numpy as jnp
 from jax import tree_util as jtu
 
+from jaxtyping import Array, Float, Int32, PRNGKeyArray
+from beartype.typing import Tuple
+
 import equinox as eqx
 
 import optax
 
 from brax import envs
 
+from .wrappers import BaseWrapper
 from .utils import filter_scan, filter_cond, generate_unroll
-from .dataclasses import TrainingState, Environment, Optimizer
+from .dataclasses import TrainingState, Environment, Optimizer, HyperParameters, Transition
 from .evaluator import Evaluator
 
 
 @eqx.filter_jit
 def compute_gae(
-    truncation, rewards, values, bootstrap_value, gae_lambda, time_discount
-):
+    truncation: Float[Array, "rollout_size"], rewards: Float[Array, "rollout_size"],
+        values: Float[Array, "rollout_size"], bootstrap_value: Float[Array, "1"],
+        gae_lambda: float, time_discount: float
+) -> Tuple[Float[Array, "rollout_size"], Float[Array, "rollout_size"]]:
     """
     Computes Generalized Advantage Estimation (GAE).
     https://arxiv.org/abs/1506.02438 (formula 16)
@@ -37,7 +43,9 @@ def compute_gae(
 
 
 @eqx.filter_jit
-def compute_loss(key: jr.PRNGKey, data, agent, params):
+def compute_loss(
+        key: PRNGKeyArray, data: Transition, agent: BaseWrapper, params: HyperParameters
+) -> Tuple[Float[Array, ""], dict]:
     """
     Computes standard PPO loss on a single trajectory, with clipped surrogate objective.
     https://arxiv.org/abs/1707.06347 (link to the PPO paper)
@@ -130,7 +138,9 @@ def clip_by_norm(x, max_norm=1.0):
 
 
 @eqx.filter_jit
-def sgd_step(key: jr.PRNGKey, optimizer, agent, data, params):
+def sgd_step(
+        key: PRNGKeyArray, optimizer: Optimizer, agent: BaseWrapper, data: Transition, params: HyperParameters
+) -> Tuple[Optimizer, BaseWrapper, dict]:
     """
     Does not do a single SGD step. It does a bunch of optimizer steps on the minibatches.
 
@@ -203,7 +213,9 @@ def sgd_step(key: jr.PRNGKey, optimizer, agent, data, params):
 
 
 @eqx.filter_jit
-def training_step(carry, _, params):
+def training_step(
+        carry: Tuple[PRNGKeyArray, TrainingState], _, params: HyperParameters
+) -> Tuple[Tuple[PRNGKeyArray, TrainingState], dict]:
     """
     The function consists of three meaningful parts:
         1. Collection of **batch_size** number of trajectories of **unroll_length** length
@@ -306,7 +318,9 @@ def training_step(carry, _, params):
 
 
 @eqx.filter_jit
-def training_epoch(key: jr.PRNGKey, training_state, params):
+def training_epoch(
+        key: PRNGKeyArray, training_state: TrainingState, params: HyperParameters
+) -> Tuple[TrainingState, dict]:
     """
     Not only runs a bunch of **training_steps**,
     but it also figures out the number of **training_steps** to run
@@ -334,7 +348,9 @@ def training_epoch(key: jr.PRNGKey, training_state, params):
     return training_state, metrics
 
 
-def train(agent, params, progress=lambda *_: None):
+def train(
+        agent: BaseWrapper, params: HyperParameters, progress=lambda *_: None
+) -> Tuple[BaseWrapper, dict]:
     """
     Initializes some brax-wrapped environments, some variables, some states,
     and then just run **training_epoch** a few times.

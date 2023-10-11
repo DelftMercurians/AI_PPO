@@ -103,10 +103,10 @@ class HyperParameters(eqx.Module):
 class Transition(eqx.Module):
     """Represents a transition between two adjacent environment states."""
 
-    observation: Float[Array, "*batch obs_size"]  # observation on the current state
+    observation: Float[Array, "*batch unroll_length obs_size"]  # observation on the current state
     action: Action  # action that was taken on the current state
-    reward: Float[Array, "*batch"]  # reward, that was given as the result of the action
-    next_observation: Float[Array, "*batch obs_size"]  # next observation
+    reward: Float[Array, "*batch unroll_length"]  # reward, that was given as the result of the action
+    next_observation: Float[Array, "*batch unroll_length obs_size"]  # next observation
     extras: dict  # any simulator-extracted hints, like end of episode signal
 
 

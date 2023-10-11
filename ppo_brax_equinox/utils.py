@@ -1,8 +1,12 @@
 import jax
+from brax import envs
 from jax import lax
 from jax import random as jr
 from jax import numpy as jnp
 from jax import tree_util as jtu
+
+from jaxtyping import Array, Float, Int32, PRNGKeyArray
+from beartype.typing import Tuple
 
 import equinox as eqx
 
@@ -50,7 +54,7 @@ def filter_cond(pred, true_f: Callable, false_f: Callable, *args):
 # The next two functions are needed to collect trajectories from the environment,
 # provided "policy": a function that given an observation,
 # returns the **Action** PyTree.
-def actor_step(key: jr.PRNGKey, env, env_state, policy: Callable, extra_fields):
+def actor_step(key: PRNGKeyArray, env, env_state, policy: Callable, extra_fields):
     """Makes a single step with the provided policy in the environment."""
     keys_policy = jr.split(key, env_state.obs.shape[0])
     action, _ = eqx.filter_vmap(policy)(keys_policy, env_state.obs)
@@ -67,8 +71,8 @@ def actor_step(key: jr.PRNGKey, env, env_state, policy: Callable, extra_fields):
 
 
 def generate_unroll(
-    key: jr.PRNGKey, env, env_state, policy: Callable, unroll_length, extra_fields
-):
+    key: PRNGKeyArray, env, env_state, policy: Callable, unroll_length, extra_fields
+) -> Tuple[envs.base.State, Transition]:
     """Collects trajectories of given unroll length."""
 
     def f(carry, _):
