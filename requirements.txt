@@ -2,3 +2,5 @@ jax
 brax
 equinox
 matplotlib
+jaxtyping
+beartype
